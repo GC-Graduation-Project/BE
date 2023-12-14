@@ -3,7 +3,7 @@ import { fileURLToPath } from "url";
 import cors from "cors";
 import puppeteer from "puppeteer";
 import fs from "fs";
-import router from "./routes/index.js";
+// import router from "./routes/index.js";
 
 //dir_name 을 사용하기 위함
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
@@ -77,10 +77,11 @@ app.post("/getSVG", (req, res) => {
         return { x, y, width, height };
       });
 
+      const imagePath = "./uploads/div_screenshot" + Date.now() + ".png";
       // Capture the screenshot of the div
       await page.screenshot(
         {
-          path: "div_screenshot.png",
+          path: imagePath,
           clip: {
             x: divBoundingBox.x,
             y: divBoundingBox.y,
@@ -90,8 +91,6 @@ app.post("/getSVG", (req, res) => {
         },
         console.log("스캔완료")
       );
-
-      const imagePath = "div_screenshot.png";
 
       // 이미지를 읽어서 전송
       fs.readFile(imagePath, (err, data) => {
