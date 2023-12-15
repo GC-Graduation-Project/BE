@@ -100,7 +100,7 @@ app.post("/getSVG", (req, res) => {
           return;
         }
         // 이미지 전송
-        res.writeHead(200, { "Content-Type": "image/jpeg" });
+        res.writeHead(200, { "Content-Type": "image/png" });
         res.end(data);
       });
     } else {
