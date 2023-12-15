@@ -6,6 +6,8 @@ const helmet = require("helmet");
 const hpp = require("hpp");
 const passport = require("passport");
 
+dotenv.config();
+
 const indexRouter = require("./routes");
 const authRouter = require("./routes/auth");
 const { sequelize } = require("./models");
