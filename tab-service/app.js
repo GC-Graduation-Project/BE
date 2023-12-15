@@ -167,34 +167,6 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500);
   res.send("error");
 });
-function createUser(vextab,imageName,imageTime,imagePath) {
-  try {
 
-
-    // Insert a new user into the Users table
-        vextab.create({
-     idvextab : 1,
-     member_id : 1,
-     img_name : imageName,
-     img_time : imageTime,
-     img_path : imagePath,
-    });
-
-    new Promise((resolve) => setTimeout(resolve, 5000));
-    
-
-   
-    // console.log('New user created:', newUser.toJSON());
-  
-  } catch (error) {
-     console.error('Unable to create a new user:', error);
-    
-     
-  } finally {
-     return true
-     // Close the database connection
-  }
-  
-}
 
 export default app;
