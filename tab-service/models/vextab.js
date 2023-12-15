@@ -7,7 +7,8 @@ export default class vextab extends Model {
     idvextab: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      primaryKey: true
+      primaryKey: true,
+      autoIncrement: true,
     },
     member_id: {
       type: DataTypes.STRING(255),
