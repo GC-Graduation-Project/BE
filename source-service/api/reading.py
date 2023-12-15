@@ -164,6 +164,7 @@ def read_midi(midi_file_path):
             file.write(f"{note_info[1]}, {note_info[0]}\n")
 
     print('Result saved')
+    return output_notes
 
 
 
