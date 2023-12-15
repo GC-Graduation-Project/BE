@@ -4,7 +4,7 @@
   "description": "TABO login service",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon app"
+    "start": "nodemon server"
   },
   "author": "Hanseul Lee",
   "license": "ISC",
