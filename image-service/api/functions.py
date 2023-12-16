@@ -229,35 +229,19 @@ def update_notes(top_list, bottom_list, tolerance=3):
                 note_type += '_dot'
             top_item[1] = note_type
         else:
-            # 일치하는 요소가 없으면 'None'으로 설정
-            top_item[1] = None
-
-        updated_list.append(top_item)
-
-    return updated_list
-
-def update_notes(top_list, bottom_list, tolerance=15):
-    updated_list = []
-
-    for top_item in top_list:
-        # Find the closest element in the bottom list within ±tolerance range of x-coordinate
-        matching_bottom_item = min(bottom_list, key=lambda x: abs(x[-1] - top_item[-1]), default=None)
-
-        if matching_bottom_item and abs(matching_bottom_item[-1] - top_item[-1]) <= tolerance:
-            note_type = matching_bottom_item[1]
-            if '_dot' in top_item[1]:
-                note_type += '_dot'
-            top_item[1] = note_type
-        else:
-            # Check for 'Half' or 'Whole' in the top list item and update accordingly
-            if 'Half' in top_item[1]:
-                top_item[1] = 'half_note'
-            elif 'Whole' in top_item[1]:
-                top_item[1] = 'whole_note'
+            # If top_item[1] is not None, check for 'Half' or 'Whole'
+            if top_item[1] is not None:
+                if 'Half' in top_item[1]:
+                    top_item[1] = 'half_note'
+                elif 'Whole' in top_item[1]:
+                    top_item[1] = 'whole_note'
+                else:
+                    top_item[1] = None
             else:
                 top_item[1] = None
 
         updated_list.append(top_item)
+
     return updated_list
 
 def count_sharps_flats(data_list):
@@ -323,12 +307,16 @@ def convert_to_sentence(mapped_result_list):
     complete_sentence = ""
 
     note_mapping = {
-        'gClef': ('treble', 0),
+        'gClef': ('treble ', 0),
         'fClef': ('bass', 0),
         'four_four': ('time=4/4\nnotes', 0),
         'quarter_note': (' :q ', 0.25),
         'half_note': (' :h ', 0.5),
+        'half_note_dot' : (' :hd ', 0.75),
+        'dot_half_note' : (' :hd ', 0.75),
+        'dot_half_note_dot': (' :hd ', 0.75),
         'quarter_note_dot': (' :qd ', 0.375),
+        'dot_quarter_note_dot': (' :qd ', 0.375),
         'eight_note': (' :8 ', 0.125),
         'whole_note': (' :w ', 1),
         'quarter_rest': (' :4 ##', 0.25),
@@ -372,8 +360,23 @@ def convert_to_sentence(mapped_result_list):
         # Check for gClef without four_four
         if gclef_found and not four_four_found and sharp_count == 1:
             sen = sen.replace('clef=treble', 'clef=treble key=G\nnotes')
-
+        elif gclef_found and not four_four_found:
+            sen = sen.replace('clef=treble', 'clef=treble \nnotes')
         sen += " =|="
         complete_sentence += sen
 
     return complete_sentence
+
+def remove_notes(lst):
+    # 비슷한 요소들 중 마지막 요소를 제외하고 리스트를 반환
+    to_keep = []
+    n = len(lst)
+    for i in range(n):
+        keep = True
+        for j in range(i + 1, n):
+            if abs(lst[i][-1] - lst[j][-1]) <= 3:
+                keep = False
+                break
+        if keep:
+            to_keep.append(lst[i])
+    return to_keep
