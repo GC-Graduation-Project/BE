@@ -109,7 +109,7 @@ def detect(image):
    # print(s)
 
     return result_list
-def detect1(image):
+def clefdetect(image):
     source, weights, imgsz = SOURCE, WEIGHTS, IMG_SIZE
     source=image
     weights = os.getcwd()  + '/models/' + 'best3.pt'
