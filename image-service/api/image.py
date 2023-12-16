@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 import api.modules as md
 import api.functions as fs
+import api.pitchDetection
 from fastapi.responses import StreamingResponse
 
 router = APIRouter()
