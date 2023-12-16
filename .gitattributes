@@ -1,1 +1,3 @@
 tab-service/main.dev.js linguist-vendored
+image-service/models/* linguist-vendored
+image-service/utils/* linguist-vendored
