@@ -1,22 +1,7 @@
 import puppeteer from "puppeteer";
 import fs from "fs";
-import multer from "multer";
-import path from "path";
 
 import Musicsheet from "../models/musicsheet.js";
-
-const upload = multer({
-  storage: multer.diskStorage({
-    destination(req, file, cb) {
-      cb(null, "uploads/");
-    },
-    filename(req, file, cb) {
-      const ext = path.extname(file.originalname);
-      cb(null, path.basename(file.originalname, ext) + Date.now() + ext);
-    },
-  }),
-  limits: { fileSize: 10 * 1024 * 1024 },
-});
 
 const maketab = async (req, res, next) => {
   try {
@@ -89,17 +74,11 @@ const maketab = async (req, res, next) => {
       time: timestp,
     });
 
-    // 이미지를 읽어서 전송
-    fs.readFile(imagePath, (err, data) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send("Internal Server Error");
-        return;
-      }
-      // 이미지 전송
-      res.writeHead(200, { "Content-Type": "image/png" });
-      res.end(data);
-    });
+    const base64Image = encodeImageToBase64(imagePath);
+
+    // Base64로 인코딩된 이미지를 클라이언트에게 전송
+    res.status(200).json({ base64Image });
+
     await browser.close();
   } catch (error) {
     console.log(error);
@@ -107,4 +86,35 @@ const maketab = async (req, res, next) => {
   }
 };
 
-export { upload, maketab };
+// 이미지 파일을 Base64로 인코딩하는 함수
+const encodeImageToBase64 = (imagePath) => {
+  try {
+    // 이미지 파일을 동기적으로 읽기
+    const imageData = fs.readFileSync(imagePath);
+
+    // 이미지 데이터를 Base64로 인코딩
+    const base64Image = imageData.toString("base64");
+
+    return base64Image;
+  } catch (error) {
+    console.error("이미지 파일을 읽는 중 오류 발생:", error);
+    throw error;
+  }
+};
+
+const test = async (req, res, next) => {
+  try {
+    // 이미지를 Base64로 인코딩
+    const base64Image = encodeImageToBase64(
+      "./uploads/div_screenshot1702741606379.png"
+    );
+
+    // Base64로 인코딩된 이미지를 클라이언트에게 전송
+    res.status(200).json({ base64Image });
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
+export { maketab, test };
