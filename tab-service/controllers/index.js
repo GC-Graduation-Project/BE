@@ -1,69 +1,110 @@
-const multer = require("multer");
-const path = require("path");
-const vextab = require("vextab");
-const puppeteer = require("puppeteer");
-const { JSDOM } = require("jsdom");
+import puppeteer from "puppeteer";
+import fs from "fs";
+import multer from "multer";
+import path from "path";
 
-/*
-exports.tab = async (req, res, next) => {
+import Musicsheet from "../models/musicsheet.js";
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination(req, file, cb) {
+      cb(null, "uploads/");
+    },
+    filename(req, file, cb) {
+      const ext = path.extname(file.originalname);
+      cb(null, path.basename(file.originalname, ext) + Date.now() + ext);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
+
+const maketab = async (req, res, next) => {
   try {
-    //const data = req.body.tabData;
-    const data = `
-    tabstave notation=true key=A time=4/4
+    const notedata = req.body;
 
-    notes :q =|: (5/2.5/3.7/4) :8 7-5h6/3 ^3^ 5h6-7/5 ^3^ :q 7V/4 |
-    notes :8 t12p7/4 s5s3/4 :8 3s:16:5-7/5 :q p5/4
-    text :w, |#segno, ,|, :hd, , #tr
-    `;
+    console.log("frombody", notedata);
+    const browser = await puppeteer.launch({ headless: "new" });
+    const page = await browser.newPage();
+    await page.goto("http://localhost:8005/vextabhtml");
+    page.on("console", (msg) => console.log("페이지 로그:", msg.text()));
 
-    const VF = vextab.Vex.Flow;
+    const target = page.$("target");
 
-    // Create a fake browser environment using jsdom
-    const { window } = new jsdom.JSDOM();
-    global.window = window;
-    global.document = window.document;
+    const result = await page.evaluate(
+      async (notedata, target) => {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        // console.log('추가스크립트')
+        const { renderSvg, vextab } = await import("../load.js");
+        var isRendered = renderSvg(vextab, notedata, target);
+        console.log("랜더링중");
+        new Promise((page) => setTimeout(page, 5000));
 
-    // Initialize VexTab artist and parser.
-    const artist = new vextab.Artist(10, 10, 750, { scale: 0.8 });
-    const tab = new vextab.VexTab(artist);
+        if (isRendered) {
+          console.log("랜더링 완료");
+        } else {
+          console.log("랜더링 실패 (vextab error)");
+        }
 
-    tab.parse(data);
+        return isRendered;
+      },
+      notedata,
+      target
+    );
 
-    // Get the SVG content
-    const svgContent = artist.renderToStave();
+    const divBoundingBox = await page.$eval("#target", (div) => {
+      console.log(div.childNodes[0]);
+      console.log("스캔하는중..");
+      const { x, y, width, height } = div.getBoundingClientRect();
+      return { x, y, width, height };
+    });
 
-    // Specify the upload folder path
-    const uploadFolderPath = path.join(__dirname, "upload");
-
-    // Ensure the upload folder exists
-    if (!fs.existsSync(uploadFolderPath)) {
-      fs.mkdirSync(uploadFolderPath);
+    try {
+      fs.readdirSync("uploads");
+    } catch (error) {
+      console.error("uploads 폴더가 없어 uploads 폴더를 생성합니다.");
+      fs.mkdirSync("uploads");
     }
 
-    // Save the SVG content to the file using the original filename
-    const fileName = req.file.filename + ".svg";
-    const svgFilePath = path.join(uploadFolderPath, fileName);
-    fs.writeFileSync(svgFilePath, svgContent);
+    const timestp = Date.now();
+    const imageName = "div_screenshot" + timestp + ".png";
+    const imagePath = "./uploads/" + imageName;
+    // Capture the screenshot of the div
+    await page.screenshot(
+      {
+        path: imagePath,
+        clip: {
+          x: divBoundingBox.x,
+          y: divBoundingBox.y,
+          width: divBoundingBox.width,
+          height: divBoundingBox.height,
+        },
+      },
+      console.log("스캔완료")
+    );
 
-    // Convert SVG to PNG using Puppeteer
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    const fileUrl = "file://" + svgFilePath;
-    await page.goto(fileUrl, { waitUntil: "networkidle2" });
-    await page.screenshot({
-      path: path.join(uploadFolderPath, req.file.filename + ".png"),
+    const musicsheet = await Musicsheet.create({
+      //userId: req.user.id,
+      userId: "test",
+      img: imageName,
+      time: timestp,
+    });
+
+    // 이미지를 읽어서 전송
+    fs.readFile(imagePath, (err, data) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Internal Server Error");
+        return;
+      }
+      // 이미지 전송
+      res.writeHead(200, { "Content-Type": "image/png" });
+      res.end(data);
     });
     await browser.close();
-
-    // Clean up the fake browser environment
-    delete global.window;
-    delete global.document;
-
-    // Send a response to the client
-    res.status(200).json({ message: "Tab data saved successfully." });
   } catch (error) {
     console.log(error);
     next(error);
   }
 };
-*/
+
+export { upload, maketab };
