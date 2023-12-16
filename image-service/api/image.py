@@ -7,7 +7,6 @@ import cv2
 import numpy as np
 import api.modules as md
 import api.functions as fs
-import api.pitchDetection
 from fastapi.responses import StreamingResponse
 
 router = APIRouter()
@@ -27,7 +26,7 @@ async def image(file: UploadFile = File(...)):
 
         rec_list, note_list, rest_list = md.beat_extraction(normalized_images)
 
-        clef_list = pitchDetection.detect1(cv2.cvtColor(cv2.bitwise_not(image_0), cv2.COLOR_GRAY2BGR))
+        clef_list = md.clefDetect(cv2.cvtColor(cv2.bitwise_not(image_0), cv2.COLOR_GRAY2BGR))
 
         note_list2, pitch_list = md.pitch_extraction(stave_list, normalized_images, clef_list)
 

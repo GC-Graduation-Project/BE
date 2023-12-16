@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 import api.functions as fs
-from api.pitchDetection import detect, detect1
+from api.pitchDetection import detect, clefdetect
 from api.beatDetection import detectBeat
 
 def deskew(image): # 이미지 보정 함수 작성 완료.
@@ -330,3 +330,6 @@ def beat_extraction(normalized_images):
 
 
     return recognition_list, note_list, rest_list
+
+def clefDetect(image):
+    return clefdetect(image)
