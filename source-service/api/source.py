@@ -11,18 +11,20 @@ router = APIRouter()
 
 @router.post('/source')
 async def source(file: UploadFile = File(...)): 
-    #separated_audio = await separateApi.separate_audio(file)
-    #midi_file_path = convertApi.convert_midi(separated_audio)
-    #audio_data = readApi.read_midi(midi_file_path)
-    #parsed_data = parseApi.parse_data(audio_data)
-    parsed_data = '''
-    tabstave notation=true clef=treble
-    notes :q 14/5 :q 12/5 :q 10/5 :q 12/5 | :q 14/5 :q 14/5 :h 14/5 | :q 12/5 :q 12/5 :h 12/5 | :q 14/5 :q 17/5 :h 17/5 | :q 14/5 :q 12/5 :q 10/5 :q 12/5
-    tabstave notation=true clef=treble
-    notes :q 14/5 :q 14/5 :q 14/5 :q 14/5 | :q 12/5 :q 12/5 :q 14/5 :q 12/5 | :h 10/5 :4 ## :q 12/5 | :qd 14/5 :8 12/5 :q 10/5 :q 12/5 | :q 14/5 :q 14/5 :h 14/5
-    tabstave notation=true clef=treble
-    notes :q 12/5 :q 12/5 :h 12/5 | :q 14/5 :q 17/5 :h 17/5 | :qd 14/5 :8 12/5 :q 10/5 :q 12/5 | :q 14/5 :q 14/5 :q 14/5 :q 14/5 | :q 12/5 :q 12/5 :q 14/5 :q 12/5 | :w 10/5 =|=
-    '''
+    separated_audio = await separateApi.separate_audio(file)
+    midi_file_path = convertApi.convert_midi(separated_audio)
+    audio_data = readApi.read_midi(midi_file_path)
+    pre_audio_data = parseApi.group_list(audio_data,15)
+    parsed_data = parseApi.convert_to_sentence(pre_audio_data)
+    
+    # parsed_data = '''
+    # tabstave notation=true clef=treble
+    # notes :q 14/5 :q 12/5 :q 10/5 :q 12/5 | :q 14/5 :q 14/5 :h 14/5 | :q 12/5 :q 12/5 :h 12/5 | :q 14/5 :q 17/5 :h 17/5 | :q 14/5 :q 12/5 :q 10/5 :q 12/5
+    # tabstave notation=true clef=treble
+    # notes :q 14/5 :q 14/5 :q 14/5 :q 14/5 | :q 12/5 :q 12/5 :q 14/5 :q 12/5 | :h 10/5 :4 ## :q 12/5 | :qd 14/5 :8 12/5 :q 10/5 :q 12/5 | :q 14/5 :q 14/5 :h 14/5
+    # tabstave notation=true clef=treble
+    # notes :q 12/5 :q 12/5 :h 12/5 | :q 14/5 :q 17/5 :h 17/5 | :qd 14/5 :8 12/5 :q 10/5 :q 12/5 | :q 14/5 :q 14/5 :q 14/5 :q 14/5 | :q 12/5 :q 12/5 :q 14/5 :q 12/5 | :w 10/5 =|=
+    # '''
     image = await tab(parsed_data)
     return image
 
