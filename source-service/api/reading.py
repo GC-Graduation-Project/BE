@@ -70,7 +70,7 @@ def read_midi(midi_file_path):
     for i, event in enumerate(clean_midi[:-1]):
         event_type, note, time, channel = event
 
-        if event_type == 'note_on':
+        if event_type == 'note_on' and is_guitar_note(note):
             bass_notes.append({
                 'note': note,
                 'start_time': time,
@@ -163,8 +163,13 @@ def read_midi(midi_file_path):
             # 파일에 output_notes의 정보를 기록
             file.write(f"{note_info[1]}, {note_info[0]}\n")
 
+    #리스트 슬라이싱
+    rec_list = []
+    for note_info in output_notes:
+        rec_list.append([note_info[1], note_info[0]])
+
     print('Result saved')
-    return output_notes
+    return rec_list
 
 
 
@@ -212,4 +217,6 @@ def rest_duration_to_rhythmic_name(rest_duration):
         return rhythmic_names[closest_duration]
     else:
         return 'Unknown rest'
-    
+
+def is_guitar_note(note):
+    return 40 <= note <= 84
