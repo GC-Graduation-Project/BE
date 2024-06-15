@@ -95,10 +95,28 @@ const encodeImageToBase64 = (imagePath) => {
     // 이미지 데이터를 Base64로 인코딩
     const base64Image = imageData.toString("base64");
 
+    console.log(base64Image);
     return base64Image;
   } catch (error) {
     console.error("이미지 파일을 읽는 중 오류 발생:", error);
     throw error;
+  }
+};
+
+const name = async (req, res, next) => {
+  try {
+    const names = await Musicsheet.findAll({
+      include: {
+        attributes: ["musicName"],
+        where: { userId: req.user.id },
+      },
+      order: [["createdAt", "DESC"]],
+      limit: 4,
+    });
+    res.json(names);
+  } catch (error) {
+    console.log(error);
+    next(error);
   }
 };
 
@@ -117,4 +135,4 @@ const test = async (req, res, next) => {
   }
 };
 
-export { maketab, test };
+export { maketab, name, test };

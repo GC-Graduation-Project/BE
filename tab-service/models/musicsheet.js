@@ -8,6 +8,10 @@ class Musicsheet extends Sequelize.Model {
           type: Sequelize.STRING(30),
           allowNull: false,
         },
+        musicName: {
+          type: Sequelize.STRING(50),
+          allowNull: true,
+        },
         img: {
           type: Sequelize.STRING(200),
           allowNull: false,
