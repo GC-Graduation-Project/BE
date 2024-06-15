@@ -13,9 +13,10 @@ router = APIRouter()
 async def source(file: UploadFile = File(...)): 
     separated_audio = await separateApi.separate_audio(file)
     midi_file_path = convertApi.convert_midi(separated_audio)
-    audio_data = readApi.read_midi(midi_file_path)
-    pre_audio_data = parseApi.group_list(audio_data,15)
-    parsed_data = parseApi.convert_to_sentence(pre_audio_data)
+    output_notes_chunked = readApi.read_midi(midi_file_path)
+    #pre_audio_data = parseApi.group_list(audio_data,15)
+    print(output_notes_chunked)
+    parsed_data = parseApi.convert_to_sentence(output_notes_chunked)
     
     # parsed_data = '''
     # tabstave notation=true clef=treble
@@ -25,6 +26,10 @@ async def source(file: UploadFile = File(...)):
     # tabstave notation=true clef=treble
     # notes :q 12/5 :q 12/5 :h 12/5 | :q 14/5 :q 17/5 :h 17/5 | :qd 14/5 :8 12/5 :q 10/5 :q 12/5 | :q 14/5 :q 14/5 :q 14/5 :q 14/5 | :q 12/5 :q 12/5 :q 14/5 :q 12/5 | :w 10/5 =|=
     # '''
+
+    #print(parsed_data)
+    #return parsed_data
+
     image = await tab(parsed_data)
     return image
 

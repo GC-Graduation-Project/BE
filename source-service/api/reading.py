@@ -1,4 +1,5 @@
 import numpy as np
+import api.parsing as parseApi
 from mido import MidiFile
 
 def read_midi(midi_file_path):
@@ -70,7 +71,7 @@ def read_midi(midi_file_path):
     for i, event in enumerate(clean_midi[:-1]):
         event_type, note, time, channel = event
 
-        if event_type == 'note_on' and is_guitar_note(note):
+        if event_type == 'note_on':
             bass_notes.append({
                 'note': note,
                 'start_time': time,
@@ -98,7 +99,6 @@ def read_midi(midi_file_path):
         note = bass_note['note']
         next_note = bass_notes[i + 1]['note']
         current_start_time = bass_note['start_time']
-        current_note = bass_notes[i]
 
         # 다음 노트의 시작 시간 찾기
         next_start_time = None
@@ -117,12 +117,12 @@ def read_midi(midi_file_path):
         rest_duration = next_start_time - bass_note['end_time'] if next_start_time is not None else None
         bass_note['rest_duration'] = rest_duration
 
-    output_notes = []
-
     # 마지막 베이스 노트에 대한 처리
     last_bass_note = bass_notes[-1]
     last_bass_note['next_start_time'] = None
     last_bass_note['rest_duration'] = None
+
+    output_notes = []
 
     for i, bass_note in enumerate(bass_notes[:-1]):
         rest_duration = bass_note['rest_duration']
@@ -132,14 +132,14 @@ def read_midi(midi_file_path):
         if rest_duration is not None and rest_duration != 0.0:
             note_name = midi_note_to_name(bass_note['note'])
             rhythmic_name = bass_note['rhythmic_name']
-            output_notes.append([note_name, rhythmic_name])
+            output_notes.append([rhythmic_name, note_name])
 
             # 추가된 부분: 다음 노트의 시작 시간이 현재 노트의 종료 시간과 같으면 B4를 추가하지 않음
             if next_start_time != bass_note['end_time']:
                 rhythmic_name = rest_duration_to_rhythmic_name(rest_duration)
                 # 추가된 부분: Rhythmic Name이 빈 문자열이 아닌 경우에만 B4 추가
                 if rhythmic_name != '':
-                    output_notes.append(['B4', rhythmic_name])
+                    output_notes.append([rhythmic_name, 'B4'])
 
     # 마지막 노트 처리
     last_note = bass_notes[-1]
@@ -148,28 +148,38 @@ def read_midi(midi_file_path):
     if last_rest_duration is not None and last_rest_duration != 0.0:
         last_note_name = midi_note_to_name(last_note['note'])
         last_rhythmic_name = last_note['rhythmic_name']
-        output_notes.append([last_note_name, last_rhythmic_name])
+        output_notes.append([last_rhythmic_name, last_note_name])
 
         # 마지막 노트의 다음 시작 시간이 없으면 B4 추가하지 않음
         if last_note['next_start_time'] is not None:
             rhythmic_name = rest_duration_to_rhythmic_name(last_rest_duration)
             # 추가된 부분: Rhythmic Name이 빈 문자열이 아닌 경우에만 B4 추가
             if rhythmic_name != '':
-                output_notes.append(['B4', rhythmic_name])
+                output_notes.append([rhythmic_name, 'B4'])
+    
+    # 리스트를 20개 단위로 나누기
+    output_notes_chunked = [output_notes[i:i + 20] for i in range(0, len(output_notes), 20)]
 
-    # 결과 저장
-    with open('bell_piano1.txt', 'w') as file:
-        for note_info in output_notes:
-            # 파일에 output_notes의 정보를 기록
-            file.write(f"{note_info[1]}, {note_info[0]}\n")
+    # 각 리스트의 첫 번째에 ['gClef', 'none'] 추가
+    for chunk in output_notes_chunked:
+        chunk.insert(0, ['gClef', 'none'])
 
-    #리스트 슬라이싱
-    rec_list = []
-    for note_info in output_notes:
-        rec_list.append([note_info[1], note_info[0]])
+    # 첫 번째 리스트에는 ['gClef', 'none'] 다음에 ['four_four', 'none'] 추가
+    output_notes_chunked[0].insert(1, ['four_four', 'none'])
 
-    print('Result saved')
-    return rec_list
+    # 노트를 기타 프렛으로 매핑하여 변환
+    for chunk in output_notes_chunked:
+        for i in range(len(chunk)):
+            if len(chunk[i]) == 2 and chunk[i][1] != 'none':
+                note_name = chunk[i][1]
+                guitar_position = parseApi.get_guitar(note_name)
+                chunk[i][1] = guitar_position
+
+    # 결과 출력
+    for chunk in output_notes_chunked:
+        print(chunk)
+
+    return output_notes_chunked
 
 
 
@@ -186,14 +196,14 @@ def midi_note_to_name(midi_note):
 
 def duration_to_rhythmic_name(duration):
     rhythmic_names = {
-        0.125: 'Sixteen Note',
-        0.25: 'Eight Note',
-        0.375: 'Dotted Eight Note',
-        0.5: 'Quarter Note',
-        0.75: 'Dotted Quarter Note',
-        1: 'Half Note',
-        1.5: 'Dotted Half Note',
-        2: 'Whole Note'
+        0.125: 'sixteen_note',
+        0.25: 'eight_note',
+        0.375: 'eight_note_dot',
+        0.5: 'quarter_note',
+        0.75: 'quarter_note_dot',
+        1: 'half_note',
+        1.5: 'half_note_dot',
+        2: 'whole_note'
     }
 
     closest_duration = min(rhythmic_names.keys(), key=lambda x: abs(x - duration))
@@ -204,14 +214,14 @@ def rest_duration_to_rhythmic_name(rest_duration):
         return ''
     if rest_duration is not None:
         rhythmic_names = {
-            0.125: 'Sixteenth rest',
-            0.25: 'Eight rest',
-            0.375: 'Dotted Eighth rest',
-            0.5: 'Quarter rest',
-            0.75: 'Dotted Quarter rest',
-            1: 'Half rest',
-            1.5: 'Dotted Half rest',
-            2: 'Whole rest'
+            0.125: 'sixteen_rest',
+            0.25: 'eight_rest',
+            0.375: 'eight_rest_dot',
+            0.5: 'quarter_rest',
+            0.75: 'quarter_rest_dot',
+            1: 'half_rest',
+            1.5: 'half_rest_dot',
+            2: 'whole_rest'
         }
         closest_duration = min(rhythmic_names.keys(), key=lambda x: abs(x - rest_duration))
         return rhythmic_names[closest_duration]
